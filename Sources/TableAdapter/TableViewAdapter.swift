@@ -4,6 +4,8 @@ import UIKit
 open class TableViewAdapter {
     // MARK: - Properties
     private var _list: TableList = TableList()
+    private var cachedList: TableList?
+    private var isUpdating: Bool = false
     /// Описание данных таблицы
     public var list: TableList { return _list }
 
@@ -38,9 +40,24 @@ open class TableViewAdapter {
             }
         }
     }
+    
+    fileprivate func reloadCachedList() {
+        if let cachedList = self.cachedList {
+            reload(with: cachedList)
+            self.cachedList = nil
+        } else {
+            isUpdating = false
+        }
+    }
 
     // MARK: - Reload
     public func reload(with tableList: TableList? = nil) {
+        guard !isUpdating else {
+            cachedList = tableList
+            return
+        }
+        
+        isUpdating = true
         registerCells(sections: tableList?.sections ?? [])
 
         let oldList = self._list
@@ -53,12 +70,19 @@ open class TableViewAdapter {
 
         if oldList.sections.isEmpty || _list.sections.isEmpty {
             tableView.reloadData()
+            isUpdating = false
+            reloadCachedList()
             return
         }
-
-        batchUpdater.batchUpdate(tableView: tableView,
-                                 oldSections: oldList.sections,
-                                 newSections: list.sections,
-                                 completion: nil)
+        
+        batchUpdater.batchUpdate(
+          tableView: tableView,
+          oldSections: oldList.sections,
+          newSections: list.sections) { [weak self] _ in
+            guard let sself = self else { return }
+            
+            sself.isUpdating = false
+            sself.reloadCachedList()
+        }
     }
 }
