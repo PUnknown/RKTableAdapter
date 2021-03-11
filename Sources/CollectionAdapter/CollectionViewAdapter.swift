@@ -2,11 +2,11 @@ import Foundation
 import UIKit
 
 open class CollectionViewAdapter {
-
     // MARK: - Properties
-    private let updQueue = DispatchQueue(label: "com.RKTableAdapter.collectionViewAdapter")
-    private let lock = NSLock()
-    private var _list: AdapterList = CollectionList()
+    private var _list: CollectionList = CollectionList()
+    private var cachedList: CollectionList?
+    private var isUpdating: Bool = false
+    private var completion: (() -> Void)?
     /// Описание данных таблицы
     public var list: CollectionList { return _list }
 
@@ -41,33 +41,51 @@ open class CollectionViewAdapter {
             }
         }
     }
+    
+    fileprivate func reloadCachedList() {
+        if let cachedList = self.cachedList {
+            reload(with: cachedList)
+            self.cachedList = nil
+        } else {
+            isUpdating = false
+            callbacks.reloadCompletion?()
+        }
+    }
 
     // MARK: - Reload
     public func reload(with collectionList: CollectionList? = nil) {
+        guard !isUpdating else {
+            cachedList = collectionList
+            return
+        }
+        
+        isUpdating = true
         registerCells(sections: collectionList?.sections ?? [])
-
-        updQueue.async { [weak self] in
+        
+        let oldList = self._list
+        
+        if let list = collectionList {
+            self._list = list
+        } else {
+            self._list = CollectionList()
+        }
+        
+        DispatchQueue.main.async { [weak self] in
             guard let sself = self else { return }
-            sself.lock.lock() ; defer { sself.lock.unlock() }
-
-            let oldList = sself._list
-
-            if let list = collectionList {
-                sself._list = list
+            
+            if oldList.sections.isEmpty || sself._list.sections.isEmpty {
+                sself.collectionView.reloadData()
+                sself.isUpdating = false
+                sself.reloadCachedList()
             } else {
-                sself._list = AdapterList()
-            }
-
-            DispatchQueue.main.async { [weak self] in
-                guard let sself = self else { return }
-
-                if oldList.sections.isEmpty || sself._list.sections.isEmpty {
-                    sself.collectionView.reloadData()
-                } else {
-                    sself.batchUpdater.batchUpdate(collectionView: sself.collectionView,
-                                                   oldSections: oldList.sections,
-                                                   newSections: sself.list.sections,
-                                                   completion: nil)
+                sself.batchUpdater.batchUpdate(
+                  collectionView: sself.collectionView,
+                  oldSections: oldList.sections,
+                  newSections: sself.list.sections) { [weak self] _ in
+                    guard let sself = self else { return }
+                    
+                    sself.isUpdating = false
+                    sself.reloadCachedList()
                 }
             }
         }

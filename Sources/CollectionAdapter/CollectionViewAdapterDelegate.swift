@@ -1,9 +1,9 @@
 import UIKit
 
 class CollectionViewAdapterDelegate: NSObject,
-    UICollectionViewDelegate,
-    UICollectionViewDataSource,
-UICollectionViewDelegateFlowLayout {
+  UICollectionViewDelegate,
+  UICollectionViewDataSource,
+  UICollectionViewDelegateFlowLayout {
     // MARK: - Properties
     unowned var holder: CollectionViewAdapter
     var automaticHeaderFooterHeight: CGFloat = 0
@@ -33,6 +33,18 @@ UICollectionViewDelegateFlowLayout {
             fatalError("Need size for cell")
         }
         return size
+    }
+    
+    func collectionView(_ collectionView: UICollectionView, layout collectionViewLayout: UICollectionViewLayout, insetForSectionAt section: Int) -> UIEdgeInsets {
+        return holder.list.sections[section].insets ?? (collectionViewLayout as? UICollectionViewFlowLayout)?.sectionInset ?? .zero
+    }
+    
+    func collectionView(_ collectionView: UICollectionView, layout collectionViewLayout: UICollectionViewLayout, minimumLineSpacingForSectionAt section: Int) -> CGFloat {
+        return holder.list.sections[section].minimumLineSpacing ?? (collectionViewLayout as? UICollectionViewFlowLayout)?.minimumLineSpacing ?? 0
+    }
+    
+    func collectionView(_ collectionView: UICollectionView, layout collectionViewLayout: UICollectionViewLayout, minimumInteritemSpacingForSectionAt section: Int) -> CGFloat {
+        return holder.list.sections[section].minimumInteritemSpacing ?? (collectionViewLayout as? UICollectionViewFlowLayout)?.minimumInteritemSpacing ?? 0
     }
 
     // MARK: - UICollectionViewDelegate, UICollectionViewDataSource

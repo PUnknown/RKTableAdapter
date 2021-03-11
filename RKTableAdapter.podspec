@@ -8,7 +8,7 @@
 
 Pod::Spec.new do |s|
   s.name             = 'RKTableAdapter'
-  s.version          = '0.1.14'
+  s.version          = '0.1.15'
   s.summary          = 'Table Adapter'
 
   s.homepage         = 'https://github.com/DaskiOFF/RKTableAdapter'
@@ -29,6 +29,10 @@ Pod::Spec.new do |s|
 
   s.description      = <<-DESC
   Table and Collection Adapters
+  0.1.15
+    Multiple TableAdapter & CollectionAdapter fixes.
+    Add ReloadCompletion callback.
+
   0.1.14
     Fixed TableAdapter
 

@@ -5,7 +5,7 @@ extension UITableView {
         if #available(iOS 11.0, *) {
             performBatchUpdates({
                 updateActions(sectionsChanges: sectionsChanges, rowsChanges: rowsChanges, changedData: changedData)
-            }, completion: nil)
+            }, completion: completion)
 
             reloadRows(at: rowsChanges.updates.map { $0.new }, with: .fade)
         } else {
@@ -43,9 +43,7 @@ extension UITableView {
 
         for changeData in changedData {
             let indexPathsVisibleRows = self.indexPathsForVisibleRows ?? []
-            guard let indexCell = indexPathsVisibleRows.index(of: changeData.oldIndexPath) else {
-                continue
-            }
+            guard let indexCell = indexPathsVisibleRows.firstIndex(of: changeData.oldIndexPath) else { continue }
 
             let cell = visibleCells[indexCell]
             changeData.oldRow.cellVM.unbind()
@@ -55,6 +53,5 @@ extension UITableView {
                 changeData.newRow.cellVM.bind(view: cell)
             }
         }
-
     }
 }

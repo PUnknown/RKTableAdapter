@@ -3,10 +3,15 @@ import UIKit
 open class CollectionAdapterCallbacks {
     // MARK: - Types
     public typealias CollectionData = (section: CollectionSection, row: CollectionItemConfigurable)
+    public typealias ReloadCompletion = () -> Void
 
     // MARK: - Props
+    private(set) var reloadCompletion: ReloadCompletion?
 
     // MARK: - Edit
+    public func setReloadCompletion(_ block: ReloadCompletion?) {
+        reloadCompletion = block
+    }
 //    #if swift(>=4.2)
 //    public typealias TableViewCellEditingStyle = UITableViewCell.EditingStyle
 //    #else

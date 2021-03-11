@@ -50,10 +50,48 @@ class BatchUpdater {
     }
 
     public func batchUpdate(collectionView: UICollectionView, oldSections: [BatchUpdateSection], newSections: [BatchUpdateSection], completion: ((Bool) -> Void)?) {
-        let changes = self.changes(forOldSection: oldSections, and: newSections)
+        var changes = self.changes(forOldSection: oldSections, and: newSections)
+        
+        var filteredUpdates: [RowsChanges.Update] = []
+        var changedData: [CollectionChangedData] = []
+
+        for updateInfo in changes.rowsChanges.updates {
+            guard let oldIndexPath = updateInfo.old,
+              let index = (collectionView.indexPathsForVisibleItems).firstIndex(of: oldIndexPath) else {
+                filteredUpdates.append(updateInfo)
+                continue
+            }
+
+            guard let oldSections = oldSections as? [CollectionSection],
+                let newSections = newSections as? [CollectionSection] else {
+                    filteredUpdates.append(updateInfo)
+                    continue
+            }
+
+            let oldRow = oldSections[oldIndexPath.section].rows[oldIndexPath.row]
+            let newRow = newSections[updateInfo.new.section].rows[updateInfo.new.row]
+
+            guard oldRow.deepDiffHash == newRow.deepDiffHash else {
+                    filteredUpdates.append(updateInfo)
+                    continue
+            }
+            let visibleCells = collectionView.visibleCells
+            if index < visibleCells.count {
+                changedData.append(CollectionChangedData(oldRow: oldRow,
+                                                         oldIndexPath: oldIndexPath,
+                                                         newRow: newRow,
+                                                         newIndexPath: updateInfo.new))
+            } else {
+                filteredUpdates.append(updateInfo)
+            }
+        }
+
+        changes.rowsChanges.updates = filteredUpdates
+        
         collectionView.performBatchUpdates(sectionsChanges: changes.sectionsChanges,
-                                     rowsChanges: changes.rowsChanges,
-                                     completion: completion)
+                                           rowsChanges: changes.rowsChanges,
+                                           changedData: changedData,
+                                           completion: completion)
     }
 
     // MARK: - Private
